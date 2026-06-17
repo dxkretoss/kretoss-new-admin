@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, FileText, Settings, Users, FilePlus } from 'lucide-react';
 
 // Placeholder Components
@@ -29,11 +29,14 @@ const SidebarItem = ({ icon: Icon, text, to }) => {
 };
 
 const Layout = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar */}
       <div className="w-64 bg-slate-900 shadow-lg flex flex-col z-20">
-        <div className="h-20 flex items-center px-6 border-b border-slate-100">
+        <div className="h-20 flex items-center px-6 border-b border-slate-100 cursor-pointer transition-colors hover:bg-slate-800"
+          onClick={() => navigate('/dashboard')}>
           <img src="./kretoss-logo.svg" alt="" />
         </div>
         <div className="flex-1 py-6 overflow-y-auto">

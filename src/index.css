@@ -36,3 +36,7 @@
     z-index: 20;
   }
 }
+
+button {
+  cursor: pointer;
+}
