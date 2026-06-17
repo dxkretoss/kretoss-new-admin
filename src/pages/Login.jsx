@@ -46,7 +46,7 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="btn-kretoss w-full font-medium py-3 rounded-xl"
+            className="btn-kretoss w-full font-medium py-3 rounded-md"
           >
             Sign In
           </button>
