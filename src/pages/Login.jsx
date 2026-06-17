@@ -46,7 +46,7 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-brand-light to-brand-dark hover:opacity-90 text-white font-medium py-3 rounded-xl transition-all shadow-md transform hover:-translate-y-0.5"
+            className="btn-kretoss w-full font-medium py-3 rounded-xl"
           >
             Sign In
           </button>

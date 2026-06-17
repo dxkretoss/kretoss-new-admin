@@ -3,6 +3,33 @@ import { Plus, X } from 'lucide-react';
 
 export default function Services() {
   const [showForm, setShowForm] = useState(false);
+  
+  const [service, setService] = useState({
+    id: '', title: '', desc: '', image: '', icon: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setService(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEdit = (item) => {
+    setService({
+      id: item.id || '',
+      title: item.title || '',
+      desc: item.desc || '',
+      image: item.image || '',
+      icon: item.icon || ''
+    });
+    setShowForm(true);
+  };
+
+  const handleAddNew = () => {
+    if (!showForm) {
+      setService({ id: '', title: '', desc: '', image: '', icon: '' });
+    }
+    setShowForm(!showForm);
+  };
 
   // Static Data mimicking servicesData
   const services = [
@@ -15,8 +42,8 @@ export default function Services() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Services</h1>
         <button 
-          onClick={() => setShowForm(!showForm)}
-          className="bg-gradient-to-r from-[#44c7f6] to-[#0037f0] hover:opacity-90 text-white px-4 py-2 rounded-md font-medium flex items-center transition-opacity"
+          onClick={handleAddNew}
+          className="btn-kretoss px-4 py-2 rounded-md font-medium flex items-center"
         >
           {showForm ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
           {showForm ? 'Cancel' : 'Add Service'}
@@ -25,32 +52,32 @@ export default function Services() {
 
       {showForm ? (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h2 className="text-lg font-semibold mb-6">Create New Service</h2>
-          <form className="space-y-6">
+          <h2 className="text-lg font-semibold mb-6">{service.id ? 'Edit Service' : 'Create New Service'}</h2>
+          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Service ID</label>
-                <input type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. 03" />
+                <input name="id" value={service.id} onChange={handleChange} type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. 03" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Service Title</label>
-                <input type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. Cloud Solutions" />
+                <input name="title" value={service.title} onChange={handleChange} type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. Cloud Solutions" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
-                <input type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. /services/cloud.png" />
+                <input name="image" value={service.image} onChange={handleChange} type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. /services/cloud.png" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Icon URL</label>
-                <input type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. /services/icon_cloud.png" />
+                <input name="icon" value={service.icon} onChange={handleChange} type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. /services/icon_cloud.png" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea rows="3" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="Service description..."></textarea>
+                <textarea name="desc" value={service.desc} onChange={handleChange} rows="3" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="Service description..."></textarea>
               </div>
             </div>
             <div className="flex justify-end">
-              <button type="button" className="bg-gradient-to-r from-[#44c7f6] to-[#0037f0] text-white px-6 py-2 rounded-md font-medium hover:opacity-90 transition-opacity">
+              <button type="submit" className="btn-kretoss px-6 py-2 rounded-md font-medium">
                 Save Service
               </button>
             </div>
@@ -74,7 +101,7 @@ export default function Services() {
                   <td className="px-6 py-4">{item.title}</td>
                   <td className="px-6 py-4 truncate max-w-xs">{item.desc}</td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-brand-light hover:text-brand-dark font-medium">Edit</button>
+                    <button onClick={() => handleEdit(item)} className="text-brand-light hover:text-brand-dark font-medium">Edit</button>
                   </td>
                 </tr>
               ))}

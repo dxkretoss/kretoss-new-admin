@@ -13,3 +13,26 @@
     @apply font-sans bg-slate-50 text-slate-900;
   }
 }
+
+@layer components {
+  .btn-kretoss {
+    @apply relative border border-white bg-gradient-to-r from-[#44c7f6] to-[#0037f0] text-white transition-all overflow-hidden z-10 shadow-md;
+  }
+
+  .btn-kretoss:hover {
+    @apply opacity-90 scale-[1.02];
+  }
+
+  .btn-kretoss::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    pointer-events: none;
+    background:
+      linear-gradient(white, white) top left / 3px 3px no-repeat,
+      linear-gradient(white, white) top right / 3px 3px no-repeat,
+      linear-gradient(white, white) bottom left / 3px 3px no-repeat,
+      linear-gradient(white, white) bottom right / 3px 3px no-repeat;
+    z-index: 20;
+  }
+}
