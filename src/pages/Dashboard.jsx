@@ -1,5 +1,5 @@
-import React from 'react';
-import { Users, Eye, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Eye, Briefcase, FileText, MessageSquare, ArrowUpRight } from 'lucide-react';
 
 const MetricCard = ({ title, value, icon: Icon, trend }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-100 hover:shadow-md transition-shadow">
@@ -18,6 +18,23 @@ const MetricCard = ({ title, value, icon: Icon, trend }) => (
 );
 
 export default function Dashboard() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/dashboard/stats');
+        const data = await response.json();
+        if (data.success) {
+          setStats(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
@@ -28,24 +45,28 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Total Visits" value="12,456" icon={Eye} trend="+12.5%" />
-        <MetricCard title="Active Users" value="892" icon={Users} trend="+5.2%" />
-        <MetricCard title="Portfolios" value="48" icon={Eye} trend="+2.1%" />
-        <MetricCard title="Applications" value="156" icon={Users} trend="+18.4%" />
+        <MetricCard title="Total Visits" value={stats ? stats.counts.visits : 0} icon={Eye} trend="All Time" />
+        <MetricCard title="Total Jobs" value={stats ? stats.counts.jobs : 0} icon={Briefcase} trend="Active" />
+        <MetricCard title="Applications" value={stats ? stats.counts.applications : 0} icon={FileText} trend="Received" />
+        <MetricCard title="Contact Forms" value={stats ? stats.counts.contacts : 0} icon={MessageSquare} trend="Leads" />
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
         <h2 className="text-lg font-semibold text-slate-800 mb-4">Recent Activity</h2>
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center py-3 border-b border-slate-50 last:border-0">
-              <div className="w-2 h-2 rounded-full bg-brand-light mr-4"></div>
-              <div>
-                <p className="text-slate-800 font-medium">New job application received</p>
-                <p className="text-sm text-slate-500">2 hours ago</p>
+          {stats && stats.recentActivity && stats.recentActivity.length > 0 ? (
+            stats.recentActivity.map((activity, idx) => (
+              <div key={idx} className="flex items-center py-3 border-b border-slate-50 last:border-0">
+                <div className={`w-2 h-2 rounded-full ${activity.type === 'Application' ? 'bg-brand-light' : 'bg-emerald-500'} mr-4`}></div>
+                <div>
+                  <p className="text-slate-800 font-medium">{activity.message}</p>
+                  <p className="text-sm text-slate-500">{new Date(activity.createdAt).toLocaleString()}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-slate-500">No recent activity found.</p>
+          )}
         </div>
       </div>
     </div>

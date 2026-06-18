@@ -1,12 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail } from 'lucide-react';
 
 export default function ContactLeads() {
-  const leads = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', subject: 'Project Inquiry', date: '2026-06-17' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', subject: 'App Development', date: '2026-06-16' },
-    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', subject: 'Web Design Quote', date: '2026-06-15' },
-  ];
+  const [leads, setLeads] = useState([]);
+
+  const fetchLeads = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/contact-leads');
+      const data = await response.json();
+      if (data.success) {
+        setLeads(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/contact-leads/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+    }
+  };
+
+  const handleViewMessage = (details) => {
+    alert(details || "No project details provided.");
+  };
 
   return (
     <div className="space-y-6">
@@ -19,24 +47,27 @@ export default function ContactLeads() {
           <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm">
             <tr>
               <th className="px-6 py-4 font-medium">Name</th>
+              <th className="px-6 py-4 font-medium">Company</th>
               <th className="px-6 py-4 font-medium">Email</th>
-              <th className="px-6 py-4 font-medium">Subject</th>
-              <th className="px-6 py-4 font-medium">Date</th>
+              <th className="px-6 py-4 font-medium">Service</th>
+              <th className="px-6 py-4 font-medium">Budget</th>
               <th className="px-6 py-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
             {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 font-medium text-slate-900">{lead.name}</td>
+              <tr key={lead._id} className="hover:bg-slate-50">
+                <td className="px-6 py-4 font-medium text-slate-900">{lead.fullName}</td>
+                <td className="px-6 py-4 text-slate-600">{lead.companyName || '-'}</td>
                 <td className="px-6 py-4 flex items-center text-brand-light">
                   <Mail className="w-4 h-4 mr-2" />
                   {lead.email}
                 </td>
-                <td className="px-6 py-4">{lead.subject}</td>
-                <td className="px-6 py-4">{lead.date}</td>
+                <td className="px-6 py-4">{lead.service || '-'}</td>
+                <td className="px-6 py-4">{lead.budget || '-'}</td>
                 <td className="px-6 py-4 text-right">
-                  <button className="text-brand-light hover:text-brand-dark font-medium">View Message</button>
+                  <button onClick={() => handleViewMessage(lead.projectDetails)} className="text-brand-light hover:text-brand-dark font-medium mr-4">View Message</button>
+                  <button onClick={() => handleDelete(lead._id)} className="text-red-500 hover:text-red-700 font-medium">Delete</button>
                 </td>
               </tr>
             ))}

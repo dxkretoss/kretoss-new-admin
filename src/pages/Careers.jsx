@@ -1,44 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
 export default function Careers() {
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id } = useParams();
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const isFormPage = location.pathname.includes('/careers/add') || location.pathname.includes('/careers/edit');
+  const isEditMode = location.pathname.includes('/careers/edit');
 
   const emptyJob = {
     title: '', slug: '', location: '', type: 'Full-Time', category: '', experience: '', description: '',
-    responsibilities: [], requirements: [], niceToHave: []
+    responsibilities: [], requirements: [], niceToHave: [], status: 'Active'
   };
 
   const [job, setJob] = useState(emptyJob);
+  const [jobsList, setJobsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [respInput, setRespInput] = useState('');
   const [reqInput, setReqInput] = useState('');
   const [niceInput, setNiceInput] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setJob(prev => ({ ...prev, [name]: value }));
+  const fetchCareers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/careers`);
+      const data = await response.json();
+      if (data.success) {
+        setJobsList(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching careers:', error);
+    }
   };
 
-  const handleEdit = (item) => {
-    setJob({
-      ...emptyJob,
-      ...item,
-      responsibilities: item.responsibilities || [],
-      requirements: item.requirements || [],
-      niceToHave: item.niceToHave || []
-    });
-    setShowForm(true);
-  };
+  useEffect(() => {
+    fetchCareers();
+  }, []);
 
-  const handleAddNew = () => {
-    if (!showForm) {
+  useEffect(() => {
+    if (isEditMode && id && jobsList.length > 0) {
+      const itemToEdit = jobsList.find(j => j.slug === id);
+      if (itemToEdit) {
+        setJob({
+          ...emptyJob,
+          ...itemToEdit,
+          responsibilities: itemToEdit.responsibilities || [],
+          requirements: itemToEdit.requirements || [],
+          niceToHave: itemToEdit.niceToHave || []
+        });
+      }
+    } else if (!isFormPage) {
       setJob(emptyJob);
       setRespInput('');
       setReqInput('');
       setNiceInput('');
     }
-    setShowForm(!showForm);
+  }, [id, isEditMode, isFormPage]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setJob(prev => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'title') {
+        updated.slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      }
+      return updated;
+    });
+  };
+
+  const handleEdit = (item) => {
+    navigate(`/careers/edit/${item.slug}`);
+  };
+
+  const handleAddNew = () => {
+    navigate('/careers/add');
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this job posting?")) return;
+    try {
+      const response = await fetch(`${API_URL}/careers/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchCareers();
+      }
+    } catch (error) {
+      console.error('Error deleting career:', error);
+    }
   };
 
   // Array Handlers
@@ -99,29 +150,59 @@ export default function Careers() {
     </div>
   );
 
-  // Static Data mimicking jobs.js
-  const jobs = [
-    { slug: 'mern-stack-developer', title: 'MERN Stack Developer', location: 'Ahmedabad', type: 'Full-Time', experience: '2-4 Years' },
-    { slug: 'business-development-executive', title: 'Business Development Executive', location: 'Ahmedabad', type: 'Full-Time', experience: '1-3 Years' },
-  ];
+  const handleSaveJob = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const url = job._id 
+        ? `${API_URL}/careers/${job._id}`
+        : `${API_URL}/careers`;
+        
+      const method = job._id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(job)
+      });
+
+      if (response.ok) {
+        fetchCareers();
+        navigate('/careers');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to save:', errorData.message);
+        alert('Failed to save: ' + errorData.message);
+      }
+    } catch (error) {
+      console.error('Error saving career:', error);
+      alert('An error occurred while saving.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Array Handlers
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Careers</h1>
         <button 
-          onClick={handleAddNew}
+          onClick={isFormPage ? () => navigate('/careers') : handleAddNew}
           className="btn-kretoss px-4 py-2 rounded-md font-medium flex items-center"
         >
-          {showForm ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-          {showForm ? 'Cancel' : 'Add Job'}
+          {isFormPage ? <X className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+          {isFormPage ? 'Cancel' : 'Add Job'}
         </button>
       </div>
 
-      {showForm ? (
+      {isFormPage ? (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <h2 className="text-lg font-semibold mb-6">{job.slug ? 'Edit Job Posting' : 'Create New Job Posting'}</h2>
-          <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); console.log('Saved Job:', job); }}>
+          <form className="space-y-8" onSubmit={handleSaveJob}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Job Title</label>
@@ -151,6 +232,13 @@ export default function Careers() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Experience Required</label>
                 <input name="experience" value={job.experience} onChange={handleChange} type="text" className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light" placeholder="e.g. 2-4 Years" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <select name="status" value={job.status || 'Active'} onChange={handleChange} className="w-full border border-slate-200 rounded-md px-4 py-2 focus:outline-none focus:border-brand-light">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
               
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
@@ -165,11 +253,19 @@ export default function Careers() {
 
             </div>
             <div className="flex justify-end border-t border-slate-100 pt-6">
-              <button type="submit" className="btn-kretoss px-8 py-3 rounded-md font-medium text-base">
-                Save Job Posting
+              <button type="submit" disabled={isLoading} className="btn-kretoss px-8 py-3 rounded-md font-medium text-base disabled:opacity-50">
+                {isLoading ? 'Saving...' : 'Save Job Posting'}
               </button>
             </div>
           </form>
+        </div>
+      ) : jobsList.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center flex flex-col items-center justify-center space-y-4">
+          <div className="text-slate-400">
+            <Plus className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-lg font-medium text-slate-600">No jobs added yet</p>
+          </div>
+          <button onClick={handleAddNew} className="btn-kretoss px-4 py-2 rounded-md mt-2 font-medium">Add Job</button>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -180,11 +276,12 @@ export default function Careers() {
                 <th className="px-6 py-4 font-medium">Location</th>
                 <th className="px-6 py-4 font-medium">Type</th>
                 <th className="px-6 py-4 font-medium">Experience</th>
+                <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
-              {jobs.map((item, idx) => (
+              {jobsList.map((item, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-6 py-4 font-medium text-slate-900">{item.title}</td>
                   <td className="px-6 py-4">{item.location}</td>
@@ -194,8 +291,14 @@ export default function Careers() {
                     </span>
                   </td>
                   <td className="px-6 py-4">{item.experience}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${item.status === 'Inactive' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                      {item.status || 'Active'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleEdit(item)} className="text-brand-light hover:text-brand-dark font-medium">Edit</button>
+                    <button onClick={() => handleEdit(item)} className="text-brand-light hover:text-brand-dark font-medium mr-4">Edit</button>
+                    <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-medium">Delete</button>
                   </td>
                 </tr>
               ))}
