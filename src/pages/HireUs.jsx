@@ -155,7 +155,7 @@ export default function HireUs() {
 
   const handleRemoveArrayItem = (fieldStr, indexToRemove) => {
     setHireUs(prev => {
-      const updated = { ...prev };
+      const updated = JSON.parse(JSON.stringify(prev));
       let ref = updated;
       const parts = fieldStr.split('.');
       const lastPart = parts.pop();
@@ -171,7 +171,7 @@ export default function HireUs() {
   const handleAddNestedArrayItem = (path, value) => {
     if (!value.trim()) return;
     setHireUs(prev => {
-      const updated = { ...prev };
+      const updated = JSON.parse(JSON.stringify(prev));
       let ref = updated;
       const parts = path.split('.');
       const lastPart = parts.pop();
@@ -202,10 +202,10 @@ export default function HireUs() {
           ))}
         </div>
         <div className="flex gap-4">
-          <textarea 
-            value={inputValue} 
-            onChange={(e) => setInputValue(e.target.value)} 
-            placeholder={`Add ${label}...`} 
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={`Add ${label}...`}
             className="input-premium flex-1 h-12"
           />
           <button type="button" onClick={() => { handleAddNestedArrayItem(path, inputValue); setInputValue(''); }} className="btn-kretoss px-6 py-2 rounded-xl h-12">
@@ -240,7 +240,7 @@ export default function HireUs() {
     setIsLoading(true);
     try {
       const formData = new FormData();
-      
+
       const payload = JSON.parse(JSON.stringify(hireUs));
 
       const simpleFields = ['title', 'slug', 'category', 'gigTitle'];
@@ -307,7 +307,7 @@ export default function HireUs() {
       const url = hireUs._id ? `http://localhost:5000/api/hire-us/${hireUs._id}` : `http://localhost:5000/api/hire-us`;
       const method = hireUs._id ? 'PUT' : 'POST';
       const token = localStorage.getItem('adminToken');
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Authorization': `Bearer ${token}` },
@@ -333,7 +333,7 @@ export default function HireUs() {
     if (!window.confirm("Are you sure you want to delete this Hire Us page?")) return;
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/hire-us/${dbId}`, { 
+      const response = await fetch(`http://localhost:5000/api/hire-us/${dbId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -396,7 +396,7 @@ export default function HireUs() {
           </div>
 
           <form className="p-8 space-y-12" onSubmit={handleSave}>
-            
+
             {/* Section 1: Basic Info */}
             <div className="space-y-6 border-b border-slate-100 pb-8">
               <h3 className="text-xl font-bold text-slate-800">1. Basic Information</h3>
@@ -434,7 +434,7 @@ export default function HireUs() {
                   <input name="name" value={hireUs.seller?.name || ''} onChange={(e) => handleChange(e, 'seller')} type="text" className="input-premium" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Title (Role) </label>
                   <input name="title" value={hireUs.seller?.title || ''} onChange={(e) => handleChange(e, 'seller')} type="text" className="input-premium" />
                 </div>
                 <div>
@@ -473,7 +473,7 @@ export default function HireUs() {
               <div className="space-y-6">
                 {(hireUs.portfolio || []).map((item, idx) => (
                   <div key={idx} className="bg-slate-50 p-6 rounded-2xl relative border border-slate-100">
-                    <button type="button" onClick={() => handleRemoveComplexItem('portfolio', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5"/></button>
+                    <button type="button" onClick={() => handleRemoveComplexItem('portfolio', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Project Title</label>
@@ -524,7 +524,7 @@ export default function HireUs() {
             {/* Section 4: About Gig */}
             <div className="space-y-6 border-b border-slate-100 pb-8">
               <h3 className="text-xl font-bold text-slate-800">4. About This Service</h3>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Section Title</label>
                 <input name="title" value={hireUs.aboutGig.title || 'About This Service'} onChange={(e) => handleChange(e, 'aboutGig')} type="text" className="input-premium" />
@@ -536,7 +536,7 @@ export default function HireUs() {
                 <h4 className="text-lg font-bold text-slate-800 mb-4">Why Choose Kretoss Technology?</h4>
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-slate-700 mb-2">List Title</label>
-                  <input value={hireUs.aboutGig.whyChooseUs?.title || 'Why Choose Kretoss Technology?'} onChange={(e) => setHireUs(prev => ({...prev, aboutGig: {...prev.aboutGig, whyChooseUs: {...prev.aboutGig.whyChooseUs, title: e.target.value}}}))} type="text" className="input-premium bg-white" />
+                  <input value={hireUs.aboutGig.whyChooseUs?.title || 'Why Choose Kretoss Technology?'} onChange={(e) => setHireUs(prev => ({ ...prev, aboutGig: { ...prev.aboutGig, whyChooseUs: { ...prev.aboutGig.whyChooseUs, title: e.target.value } } }))} type="text" className="input-premium bg-white" />
                 </div>
                 {renderNestedArrayInput('List Items', 'aboutGig.whyChooseUs.list', whyChooseUsListInput, setWhyChooseUsListInput)}
               </div>
@@ -545,7 +545,7 @@ export default function HireUs() {
                 <h4 className="text-lg font-bold text-slate-800 mb-4">Services</h4>
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-slate-700 mb-2">List Title</label>
-                  <input value={hireUs.aboutGig.services?.title || 'Services:'} onChange={(e) => setHireUs(prev => ({...prev, aboutGig: {...prev.aboutGig, services: {...prev.aboutGig.services, title: e.target.value}}}))} type="text" className="input-premium bg-white" />
+                  <input value={hireUs.aboutGig.services?.title || 'Services:'} onChange={(e) => setHireUs(prev => ({ ...prev, aboutGig: { ...prev.aboutGig, services: { ...prev.aboutGig.services, title: e.target.value } } }))} type="text" className="input-premium bg-white" />
                 </div>
                 {renderNestedArrayInput('List Items', 'aboutGig.services.list', servicesListInput, setServicesListInput)}
               </div>
@@ -563,7 +563,7 @@ export default function HireUs() {
               <div className="space-y-6">
                 {(hireUs.reviews || []).map((item, idx) => (
                   <div key={idx} className="bg-slate-50 p-6 rounded-2xl relative border border-slate-100">
-                    <button type="button" onClick={() => handleRemoveComplexItem('reviews', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5"/></button>
+                    <button type="button" onClick={() => handleRemoveComplexItem('reviews', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1">Client Name</label>
@@ -612,7 +612,7 @@ export default function HireUs() {
               <div className="space-y-4">
                 {(hireUs.faqs || []).map((faq, idx) => (
                   <div key={idx} className="bg-slate-50 p-6 rounded-2xl relative border border-slate-100 flex flex-col gap-4">
-                    <button type="button" onClick={() => handleRemoveComplexItem('faqs', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5"/></button>
+                    <button type="button" onClick={() => handleRemoveComplexItem('faqs', idx)} className="absolute top-4 right-4 text-red-500 hover:text-red-700"><Trash2 className="w-5 h-5" /></button>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">Question</label>
                       <input name="question" value={faq.question} onChange={(e) => handleComplexItemChange(e, 'faqs', idx)} type="text" className="input-premium pr-10" />
@@ -648,9 +648,9 @@ export default function HireUs() {
             </div>
 
             <div className="flex justify-end pt-4 border-t border-slate-100">
-               <button type="submit" disabled={isLoading} className="btn-kretoss px-8 py-3 rounded-xl font-bold text-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,55,240,0.3)] transition-all hover:scale-105">
-                 {isLoading ? 'Saving...' : 'Save Hire Us Page'}
-               </button>
+              <button type="submit" disabled={isLoading} className="btn-kretoss px-8 py-3 rounded-xl font-bold text-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,55,240,0.3)] transition-all hover:scale-105">
+                {isLoading ? 'Saving...' : 'Save Hire Us Page'}
+              </button>
             </div>
 
           </form>
@@ -669,7 +669,7 @@ export default function HireUs() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {hireUsList.length === 0 ? (
-                   <tr><td colSpan="4" className="py-8 text-center text-slate-500">No Hire Us pages found.</td></tr>
+                  <tr><td colSpan="4" className="py-8 text-center text-slate-500">No Hire Us pages found.</td></tr>
                 ) : hireUsList.map((item) => (
                   <tr key={item._id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="py-4 px-6">
