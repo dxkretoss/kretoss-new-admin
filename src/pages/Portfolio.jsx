@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, X, Upload, ArrowLeft, Trash2, GripVertical, Eye } from 'lucide-react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -8,7 +8,13 @@ export default function Portfolio() {
   const emptyPortfolio = {
     title: '', slug: '', category: 'Custom web', timeline: '', country: '', link: '', client: '',
     appLinks: { android: '', ios: '' },
-    tags: [], techStack: [], images: [], thumbnailImage: null, description: '', purpose: '', challenge: '', solution: '', keyFeatures: []
+    tags: [], techStack: [], images: [], thumbnailImage: null, description: '',
+    
+    overviewTitle: 'About the Project', overviewDescriptions: [], coreCapabilities: [],
+    challengeTitle: 'What Problem Were We Solving?', challengeQuote: '', challengeDescription: '', challengeCards: [],
+    processTitle: 'How We Built the Solution', processDescription: '', processSteps: [],
+    resultsTitle: '', resultsDescription: '', resultsCheckpoints: [], resultsCards: [],
+    feedbackImage: null, feedbackName: '', feedbackRole: '', feedbackRating: 5, feedbackDate: '', feedbackDescription: ''
   };
 
   // Single portfolio state
@@ -18,10 +24,17 @@ export default function Portfolio() {
   const [categories, setCategories] = useState([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Drag and drop states
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  const [dragOverItemIndex, setDragOverItemIndex] = useState(null);
   
   // Delete confirmation states
   const [portfolioToDelete, setPortfolioToDelete] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+  // Image preview modal state
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,23 +79,24 @@ export default function Portfolio() {
     if (isEditMode && id && portfoliosList.length > 0) {
       const itemToEdit = portfoliosList.find(p => p._id === id);
       if (itemToEdit) {
-        let parsedFeatures = [];
-        if (Array.isArray(itemToEdit.keyFeatures)) {
-          parsedFeatures = itemToEdit.keyFeatures;
-        } else if (typeof itemToEdit.keyFeatures === 'string') {
-          try {
-            parsedFeatures = JSON.parse(itemToEdit.keyFeatures);
-          } catch (e) {
-            // Fallback for old simple strings
-            parsedFeatures = itemToEdit.keyFeatures ? [itemToEdit.keyFeatures] : [];
+        const parseJsonField = (fieldData) => {
+          if (Array.isArray(fieldData)) return fieldData;
+          if (typeof fieldData === 'string') {
+            try { return JSON.parse(fieldData); } catch (e) { return fieldData ? [fieldData] : []; }
           }
-        }
+          return [];
+        };
 
         setPortfolio({
           ...emptyPortfolio,
           ...itemToEdit,
           appLinks: itemToEdit.appLinks || { android: '', ios: '' },
-          keyFeatures: parsedFeatures
+          overviewDescriptions: parseJsonField(itemToEdit.overviewDescriptions),
+          coreCapabilities: parseJsonField(itemToEdit.coreCapabilities),
+          challengeCards: parseJsonField(itemToEdit.challengeCards),
+          processSteps: parseJsonField(itemToEdit.processSteps),
+          resultsCheckpoints: parseJsonField(itemToEdit.resultsCheckpoints),
+          resultsCards: parseJsonField(itemToEdit.resultsCards)
         });
       }
     } else if (!isFormPage) {
@@ -209,23 +223,68 @@ export default function Portfolio() {
     }));
   };
 
-  const handleAddFeature = () => {
-    setPortfolio(prev => ({ ...prev, keyFeatures: [...prev.keyFeatures, ''] }));
-  };
 
-  const handleFeatureChange = (index, value) => {
+
+  const handleArrayStringChange = (field, index, value) => {
     setPortfolio(prev => {
-      const updatedFeatures = [...prev.keyFeatures];
-      updatedFeatures[index] = value;
-      return { ...prev, keyFeatures: updatedFeatures };
+      const arr = [...prev[field]];
+      arr[index] = value;
+      return { ...prev, [field]: arr };
     });
   };
 
-  const handleRemoveFeature = (index) => {
+  const handleArrayStringAdd = (field) => {
+    setPortfolio(prev => ({ ...prev, [field]: [...prev[field], ''] }));
+  };
+
+  const handleArrayStringRemove = (field, index) => {
     setPortfolio(prev => {
-      const updatedFeatures = [...prev.keyFeatures];
-      updatedFeatures.splice(index, 1);
-      return { ...prev, keyFeatures: updatedFeatures };
+      const arr = [...prev[field]];
+      arr.splice(index, 1);
+      return { ...prev, [field]: arr };
+    });
+  };
+
+  const handleArrayObjectChange = (field, index, key, value) => {
+    setPortfolio(prev => {
+      const arr = [...prev[field]];
+      arr[index] = { ...arr[index], [key]: value };
+      return { ...prev, [field]: arr };
+    });
+  };
+
+  const handleArrayObjectAdd = (field, defaultObj) => {
+    setPortfolio(prev => ({ ...prev, [field]: [...prev[field], defaultObj] }));
+  };
+
+  const handleArrayObjectRemove = (field, index) => {
+    setPortfolio(prev => {
+      const arr = [...prev[field]];
+      arr.splice(index, 1);
+      return { ...prev, [field]: arr };
+    });
+  };
+
+  const handleFeedbackImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setPortfolio(prev => ({
+      ...prev,
+      feedbackImage: {
+        file,
+        preview: URL.createObjectURL(file)
+      }
+    }));
+    e.target.value = null;
+  };
+
+  const handleRemoveFeedbackImage = () => {
+    setPortfolio(prev => {
+      if (prev.feedbackImage && prev.feedbackImage.preview) {
+        URL.revokeObjectURL(prev.feedbackImage.preview);
+      }
+      return { ...prev, feedbackImage: null };
     });
   };
 
@@ -236,20 +295,33 @@ export default function Portfolio() {
       const formData = new FormData();
 
       // Append text fields
-      const textFields = ['title', 'slug', 'category', 'timeline', 'country', 'link', 'client', 'description', 'purpose', 'challenge', 'solution'];
+      const textFields = [
+        'title', 'slug', 'category', 'timeline', 'country', 'link', 'client', 'description',
+        'overviewTitle', 'challengeTitle', 'challengeQuote', 'challengeDescription',
+        'processTitle', 'processDescription', 'resultsTitle', 'resultsDescription',
+        'feedbackName', 'feedbackRole', 'feedbackRating', 'feedbackDate', 'feedbackDescription'
+      ];
       textFields.forEach(field => {
         if (portfolio[field]) formData.append(field, portfolio[field]);
       });
 
       // Append array fields
-      formData.append('tags', JSON.stringify(portfolio.tags));
-      formData.append('techStack', JSON.stringify(portfolio.techStack));
-      formData.append('keyFeatures', JSON.stringify(portfolio.keyFeatures));
-      formData.append('appLinks', JSON.stringify(portfolio.appLinks));
+      const jsonFields = [
+        'tags', 'techStack', 'appLinks',
+        'overviewDescriptions', 'coreCapabilities', 'challengeCards',
+        'processSteps', 'resultsCheckpoints', 'resultsCards'
+      ];
+      jsonFields.forEach(field => {
+        formData.append(field, JSON.stringify(portfolio[field]));
+      });
 
       // Append files
       if (portfolio.thumbnailImage && portfolio.thumbnailImage.file) {
         formData.append('thumbnailImage', portfolio.thumbnailImage.file);
+      }
+      
+      if (portfolio.feedbackImage && portfolio.feedbackImage.file) {
+        formData.append('feedbackImage', portfolio.feedbackImage.file);
       }
 
       if (portfolio.images && portfolio.images.length > 0) {
@@ -322,6 +394,53 @@ export default function Portfolio() {
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+      if (e.target && e.target.classList) {
+        e.target.classList.add('opacity-50');
+      }
+    }, 0);
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+    
+    const newCategories = [...categories];
+    const draggedItem = newCategories[draggedItemIndex];
+    newCategories.splice(draggedItemIndex, 1);
+    newCategories.splice(index, 0, draggedItem);
+    
+    setCategories(newCategories);
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragEnd = async (e) => {
+    if (e.target && e.target.classList) {
+      e.target.classList.remove('opacity-50');
+    }
+    setDraggedItemIndex(null);
+    
+    try {
+      const order = categories.map(cat => cat._id);
+      const response = await fetch(`${API_URL}/portfolio-categories/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order })
+      });
+      if (!response.ok) {
+        toast.error('Failed to save category order');
+        fetchCategories(); // revert to backend state
+      }
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      toast.error('Failed to save category order');
+      fetchCategories();
     }
   };
 
@@ -505,47 +624,263 @@ export default function Portfolio() {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
                   <textarea name="description" value={portfolio.description} onChange={handleChange} rows="3" className="input-premium resize-y" placeholder="Enter description"></textarea>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Purpose</label>
-                  <textarea name="purpose" value={portfolio.purpose} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder="Enter purpose"></textarea>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Challenge</label>
-                  <textarea name="challenge" value={portfolio.challenge} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder="Enter challenges"></textarea>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Solution</label>
-                  <textarea name="solution" value={portfolio.solution} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder="Enter solution"></textarea>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-3">Key Features</label>
-                  <div className="space-y-4">
-                    {(Array.isArray(portfolio.keyFeatures) ? portfolio.keyFeatures : []).map((feature, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <input
-                          type="text"
-                          value={feature}
-                          onChange={(e) => handleFeatureChange(index, e.target.value)}
-                          className="input-premium"
-                          placeholder="Enter a key feature"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFeature(index)}
-                          className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all duration-300 flex-shrink-0 border border-red-100 hover:border-red-500 hover:shadow-md"
-                        >
-                          <X className="w-5 h-5" />
+
+
+
+                {/* -------------------- NEW CASE STUDY SECTIONS -------------------- */}
+                
+                {/* Section: Overview */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8 mt-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">4. Overview (About the Project)</h3>
+                  <p className="text-sm text-slate-500 mb-6">Detailed overview descriptions and core capabilities.</p>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Overview Title</label>
+                      <input name="overviewTitle" value={portfolio.overviewTitle} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. About the Project" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Overview Descriptions</label>
+                      <div className="space-y-4">
+                        {portfolio.overviewDescriptions.map((desc, index) => (
+                          <div key={index} className="flex items-start gap-3">
+                            <textarea
+                              value={desc}
+                              onChange={(e) => handleArrayStringChange('overviewDescriptions', index, e.target.value)}
+                              rows="3"
+                              className="input-premium resize-y"
+                              placeholder="Enter paragraph"
+                            />
+                            <button type="button" onClick={() => handleArrayStringRemove('overviewDescriptions', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayStringAdd('overviewDescriptions')} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Description
                         </button>
                       </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={handleAddFeature}
-                      className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit"
-                    >
-                      <Plus className="w-4 h-4 mr-2" /> Add Feature
-                    </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Core Capabilities</label>
+                      <div className="space-y-4">
+                        {portfolio.coreCapabilities.map((cap, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input
+                              type="text"
+                              value={cap}
+                              onChange={(e) => handleArrayStringChange('coreCapabilities', index, e.target.value)}
+                              className="input-premium"
+                              placeholder="e.g. Scalable Architecture"
+                            />
+                            <button type="button" onClick={() => handleArrayStringRemove('coreCapabilities', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all flex-shrink-0 border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayStringAdd('coreCapabilities')} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Capability
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                {/* Section: The Challenge */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">5. The Challenge</h3>
+                  <div className="space-y-6 mt-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Challenge Title</label>
+                      <input name="challengeTitle" value={portfolio.challengeTitle} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. What Problem Were We Solving?" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Challenge Quote (Italicized Text)</label>
+                      <textarea name="challengeQuote" value={portfolio.challengeQuote} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder={`e.g. "The client needed a robust Angular + Node.js architecture..."`}></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Challenge Description</label>
+                      <textarea name="challengeDescription" value={portfolio.challengeDescription} onChange={handleChange} rows="3" className="input-premium resize-y" placeholder="Enter main challenge description"></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Challenge Cards</label>
+                      <div className="space-y-4">
+                        {portfolio.challengeCards.map((card, index) => (
+                          <div key={index} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex gap-3">
+                                <input type="text" value={card.number || ''} onChange={(e) => handleArrayObjectChange('challengeCards', index, 'number', e.target.value)} className="input-premium w-20" placeholder="01" />
+                                <input type="text" value={card.title || ''} onChange={(e) => handleArrayObjectChange('challengeCards', index, 'title', e.target.value)} className="input-premium flex-1" placeholder="Title (e.g. Scalability Gaps)" />
+                              </div>
+                              <textarea value={card.description || ''} onChange={(e) => handleArrayObjectChange('challengeCards', index, 'description', e.target.value)} rows="2" className="input-premium resize-y" placeholder="Card description" />
+                            </div>
+                            <button type="button" onClick={() => handleArrayObjectRemove('challengeCards', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayObjectAdd('challengeCards', { number: '', title: '', description: '' })} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Challenge Card
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Our Process */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">6. Our Process</h3>
+                  <div className="space-y-6 mt-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Process Title</label>
+                      <input name="processTitle" value={portfolio.processTitle} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. How We Built the Solution" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Process Overview Description</label>
+                      <textarea name="processDescription" value={portfolio.processDescription} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder="Our engagement followed a structured approach..."></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Process Steps</label>
+                      <div className="space-y-4">
+                        {portfolio.processSteps.map((step, index) => (
+                          <div key={index} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex-1 space-y-3">
+                              <div className="flex gap-3">
+                                <input type="text" value={step.stepNumber || ''} onChange={(e) => handleArrayObjectChange('processSteps', index, 'stepNumber', e.target.value)} className="input-premium w-20" placeholder="01" />
+                                <input type="text" value={step.title || ''} onChange={(e) => handleArrayObjectChange('processSteps', index, 'title', e.target.value)} className="input-premium flex-1" placeholder="Title (e.g. Discovery & Strategy)" />
+                              </div>
+                              <textarea value={step.description || ''} onChange={(e) => handleArrayObjectChange('processSteps', index, 'description', e.target.value)} rows="2" className="input-premium resize-y" placeholder="Step description" />
+                            </div>
+                            <button type="button" onClick={() => handleArrayObjectRemove('processSteps', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayObjectAdd('processSteps', { stepNumber: '', title: '', description: '' })} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Process Step
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Results & Impact */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">7. Results & Impact</h3>
+                  <div className="space-y-6 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Results Title</label>
+                        <input name="resultsTitle" value={portfolio.resultsTitle} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. Measurable Outcomes Delivered" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Results Description</label>
+                        <textarea name="resultsDescription" value={portfolio.resultsDescription} onChange={handleChange} rows="2" className="input-premium resize-y" placeholder="Description..."></textarea>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Result Checkpoints</label>
+                      <div className="space-y-4">
+                        {portfolio.resultsCheckpoints.map((cp, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input type="text" value={cp} onChange={(e) => handleArrayStringChange('resultsCheckpoints', index, e.target.value)} className="input-premium" placeholder="e.g. 40% reduction in data processing time" />
+                            <button type="button" onClick={() => handleArrayStringRemove('resultsCheckpoints', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all flex-shrink-0 border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayStringAdd('resultsCheckpoints')} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Checkpoint
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-3">Result Cards (Blue boxes)</label>
+                      <div className="space-y-4">
+                        {portfolio.resultsCards.map((card, index) => (
+                          <div key={index} className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex-1 space-y-3">
+                              <div className="grid grid-cols-2 gap-3">
+                                <input type="text" value={card.value || ''} onChange={(e) => handleArrayObjectChange('resultsCards', index, 'value', e.target.value)} className="input-premium" placeholder="Value (e.g. +142%)" />
+                                <input type="text" value={card.title || ''} onChange={(e) => handleArrayObjectChange('resultsCards', index, 'title', e.target.value)} className="input-premium" placeholder="Title (e.g. Conversion Lift)" />
+                              </div>
+                              <textarea value={card.description || ''} onChange={(e) => handleArrayObjectChange('resultsCards', index, 'description', e.target.value)} rows="2" className="input-premium resize-y" placeholder="Card description" />
+                            </div>
+                            <button type="button" onClick={() => handleArrayObjectRemove('resultsCards', index)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-xl transition-all border border-red-100">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => handleArrayObjectAdd('resultsCards', { value: '', title: '', description: '' })} className="flex items-center text-brand-dark hover:text-brand-light bg-brand-light/5 hover:bg-brand-light/10 px-4 py-2 rounded-xl text-sm font-semibold transition-all w-fit">
+                          <Plus className="w-4 h-4 mr-2" /> Add Result Card
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section: Client Feedback */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">8. Client Feedback (Testimonial)</h3>
+                  <div className="space-y-6 mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Client Name</label>
+                        <input name="feedbackName" value={portfolio.feedbackName} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. Sarah Johnson" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Client Role</label>
+                        <input name="feedbackRole" value={portfolio.feedbackRole} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. CTO, Guestway" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Rating (Stars: 1-5)</label>
+                        <input name="feedbackRating" value={portfolio.feedbackRating} onChange={handleChange} type="number" min="1" max="5" className="input-premium" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Date / Location String</label>
+                        <input name="feedbackDate" value={portfolio.feedbackDate} onChange={handleChange} type="text" className="input-premium" placeholder="e.g. Jan 14, 2025" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Feedback Description</label>
+                        <textarea name="feedbackDescription" value={portfolio.feedbackDescription} onChange={handleChange} rows="3" className="input-premium resize-y" placeholder="Testimonial text..."></textarea>
+                      </div>
+
+                      {/* Feedback Image Upload */}
+                      <div className="md:col-span-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Client Profile Image</label>
+                        <label className="mt-1 flex justify-center px-6 py-6 border-2 border-slate-300 border-dashed rounded-2xl hover:border-brand-light transition-all bg-slate-50 hover:bg-brand-light/5 cursor-pointer relative group">
+                          <div className="space-y-2 text-center">
+                            <Upload className="h-6 w-6 text-brand-light mx-auto" />
+                            <div className="flex text-sm text-slate-600 justify-center font-medium mt-2">
+                              <span className="text-brand-dark px-1">Upload client image</span>
+                              <input type="file" className="sr-only" accept="image/*" onChange={handleFeedbackImageChange} />
+                            </div>
+                          </div>
+                        </label>
+                        {portfolio.feedbackImage && (
+                          <div className="mt-4 relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm w-32 h-32 bg-slate-100">
+                            <img src={portfolio.feedbackImage.preview || `${BACKEND_URL}${portfolio.feedbackImage}`} alt="Client" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button type="button" onClick={handleRemoveFeedbackImage} className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transform hover:scale-110 transition-transform shadow-lg">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* ----------------------------------------------------------------- */}
+
+                {/* Section: Uploads */}
+                <div className="md:col-span-2 border-t border-slate-100 pt-8 mt-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">9. Display Images</h3>
+                  <p className="text-sm text-slate-500 mb-6">Thumbnails and full preview images.</p>
                 </div>
 
                 {/* Thumbnail Upload */}
@@ -553,9 +888,9 @@ export default function Portfolio() {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Thumbnail Image
                   </label>
-                  <label className="mt-1 flex justify-center px-6 py-10 border-2 border-slate-300 border-dashed rounded-2xl hover:border-brand-light transition-all bg-slate-50 hover:bg-brand-light/5 cursor-pointer relative group">
+                  <label className="mt-1 flex justify-center px-6 py-6 border-2 border-slate-300 border-dashed rounded-2xl hover:border-brand-light transition-all bg-slate-50 hover:bg-brand-light/5 cursor-pointer relative group">
                     <div className="space-y-2 text-center">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
                         <Upload className="h-6 w-6 text-brand-light" />
                       </div>
                       <div className="flex text-sm text-slate-600 justify-center font-medium">
@@ -568,10 +903,17 @@ export default function Portfolio() {
 
                   {/* Thumbnail Preview */}
                   {portfolio.thumbnailImage && (
-                    <div className="mt-4 w-full">
-                      <div className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-100">
+                    <div className="mt-4">
+                      <div className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm w-[150px] h-[150px] bg-slate-100">
                         <img src={portfolio.thumbnailImage.preview || `${BACKEND_URL}${portfolio.thumbnailImage}`} alt="Thumbnail Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImageUrl(portfolio.thumbnailImage.preview || `${BACKEND_URL}${portfolio.thumbnailImage}`)}
+                            className="bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transform hover:scale-110 transition-transform shadow-lg backdrop-blur-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
                           <button
                             type="button"
                             onClick={handleRemoveThumbnail}
@@ -590,9 +932,9 @@ export default function Portfolio() {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Full Website / App Image(s) <span className="text-brand-light ml-1 font-normal">(Multiple enabled)</span>
                   </label>
-                  <label className="mt-1 flex justify-center px-6 py-10 border-2 border-slate-300 border-dashed rounded-2xl hover:border-brand-light transition-all bg-slate-50 hover:bg-brand-light/5 cursor-pointer relative group">
+                  <label className="mt-1 flex justify-center px-6 py-6 border-2 border-slate-300 border-dashed rounded-2xl hover:border-brand-light transition-all bg-slate-50 hover:bg-brand-light/5 cursor-pointer relative group">
                     <div className="space-y-2 text-center">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
                         <Upload className="h-6 w-6 text-brand-dark" />
                       </div>
                       <div className="flex text-sm text-slate-600 justify-center font-medium">
@@ -606,11 +948,18 @@ export default function Portfolio() {
 
                   {/* Image Previews */}
                   {portfolio.images.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-2 gap-4">
+                    <div className="mt-4 flex flex-wrap gap-4">
                       {portfolio.images.map((img, index) => (
-                        <div key={index} className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-100">
+                        <div key={index} className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm w-[150px] h-[150px] bg-slate-100 flex-shrink-0">
                           <img src={img.preview || `${BACKEND_URL}${img}`} alt="Preview" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImageUrl(img.preview || `${BACKEND_URL}${img}`)}
+                              className="bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transform hover:scale-110 transition-transform shadow-lg backdrop-blur-sm"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleRemoveImage(index)}
@@ -726,9 +1075,20 @@ export default function Portfolio() {
               <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                 {categories.length === 0 ? (
                   <p className="text-center text-slate-500 text-sm py-4">No categories added yet.</p>
-                ) : categories.map((cat) => (
-                  <div key={cat._id} className="flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors group">
-                    <span className="font-medium text-slate-700">{cat.name}</span>
+                ) : categories.map((cat, index) => (
+                  <div 
+                    key={cat._id} 
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnter={(e) => handleDragEnter(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`flex justify-between items-center bg-slate-50/80 p-3.5 rounded-xl border transition-colors group cursor-move ${draggedItemIndex === index ? 'border-brand-light shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <GripVertical className="w-5 h-5 text-slate-400" />
+                      <span className="font-medium text-slate-700 select-none">{cat.name}</span>
+                    </div>
                     <button
                       onClick={() => confirmDeleteCategory(cat._id)}
                       className="text-red-400 hover:text-white border-2 border-red-100 hover:border-red-500 p-1.5 rounded-lg hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 flex items-center justify-center shadow-sm"
@@ -797,6 +1157,21 @@ export default function Portfolio() {
           </div>
         </div>
       )}
+      {/* Image Preview Modal */}
+      {previewImageUrl && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setPreviewImageUrl(null)}>
+          <div className="relative max-w-5xl max-h-[90vh] w-full flex items-center justify-center">
+            <button
+              onClick={() => setPreviewImageUrl(null)}
+              className="fixed top-6 right-6 text-white bg-white/10 hover:bg-red-500 rounded-full p-2 transition-colors backdrop-blur-sm z-[80]"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img src={previewImageUrl} alt="Preview large" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+          </div>
+        </div>
+      )}
+
 
     </div>
   );

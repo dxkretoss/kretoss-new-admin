@@ -15,23 +15,6 @@
     @apply font-sans bg-[#F4F7FB] text-slate-800 antialiased selection:bg-brand-light/30 selection:text-brand-dark;
   }
 
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-300;
-  }
 }
 
 @layer components {

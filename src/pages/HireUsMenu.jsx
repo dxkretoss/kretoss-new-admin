@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Plus, X, Upload, Save, Trash2, LayoutDashboard } from 'lucide-react';
+import { Plus, X, Upload, Save, Trash2, LayoutDashboard, ArrowRight, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export default function HireUsMenu() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [menu, setMenu] = useState({ categories: [], bottomLinks: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const isEditing = searchParams.get('edit') === 'true';
   const setIsEditing = (editing) => {
     if (editing) {
@@ -17,7 +18,7 @@ export default function HireUsMenu() {
       setSearchParams({});
     }
   };
-  
+
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'category' | 'item' | 'bottomLink', cIndex, iIndex, lIndex }
 
@@ -155,7 +156,7 @@ export default function HireUsMenu() {
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     try {
       const formData = new FormData();
       const payload = JSON.parse(JSON.stringify(menu));
@@ -213,11 +214,18 @@ export default function HireUsMenu() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+    <div className="space-y-8 pb-10">
       <div className="flex justify-between items-end pb-6 border-b-2 border-slate-200/50 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Hire Us Mega Menu</h1>
-          <p className="text-sm text-slate-500 mt-2 font-medium">Configure the categories and links displayed in the Hire Us dropdown menu.</p>
+        <div className="flex items-start gap-4">
+          {isEditing && (
+            <button type="button" onClick={() => setIsEditing(false)} className="mt-0.5 p-2 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 rounded-xl transition-all group">
+              <ArrowLeft className="w-5 h-5 text-slate-500 group-hover:text-brand-dark" />
+            </button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Hire Us Mega Menu</h1>
+            <p className="text-sm text-slate-500 mt-2 font-medium">Configure the categories and links displayed in the Hire Us dropdown menu.</p>
+          </div>
         </div>
         {isEditing ? (
           <button type="button" onClick={handleSave} disabled={isSaving} className="btn-kretoss px-6 py-3 rounded-xl text-sm font-semibold flex items-center shadow-md transition-all hover:-translate-y-0.5">
@@ -231,59 +239,60 @@ export default function HireUsMenu() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-        <form className="p-8 space-y-12" onSubmit={handleSave}>
-          
-          {/* Categories Section */}
-          <div className="space-y-6 border-b border-slate-100 pb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-blue-500"/> Menu Categories (Columns)</h3>
-              {isEditing && <button type="button" onClick={handleAddCategory} className="btn-kretoss px-4 py-2 rounded-xl text-sm"><Plus className="w-4 h-4 inline mr-1" /> Add Category</button>}
-            </div>
+        {isEditing ? (
+          <form className="p-8 space-y-12" onSubmit={handleSave}>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {menu.categories.map((category, cIndex) => (
-                <div key={cIndex} className="bg-slate-50 rounded-2xl p-6 relative border border-slate-200 shadow-sm">
-                  {isEditing && <button type="button" onClick={() => handleRemoveCategory(cIndex)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>}
-                  
-                  <div className="mb-6 mr-10">
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Category Title</label>
-                    {isEditing ? (
-                      <input type="text" value={category.title} onChange={(e) => handleCategoryChange(e, cIndex)} placeholder="e.g. Frontend Developers" className="input-premium w-full text-lg font-bold text-slate-800" required />
-                    ) : (
-                      <div className="text-lg font-bold text-slate-800 py-2">{category.title || '-'}</div>
-                    )}
-                  </div>
+            {/* Categories Section */}
+            <div className="space-y-6 border-b border-slate-100 pb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><LayoutDashboard className="w-5 h-5 text-blue-500" /> Menu Categories (Columns)</h3>
+                {isEditing && <button type="button" onClick={handleAddCategory} className="btn-kretoss px-4 py-2 rounded-xl text-sm"><Plus className="w-4 h-4 inline mr-1" /> Add Category</button>}
+              </div>
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                      <label className="text-sm font-bold text-slate-700">Roles / Items</label>
-                      {isEditing && <button type="button" onClick={() => handleAddItem(cIndex)} className="text-blue-500 hover:text-blue-700 text-sm font-bold flex items-center"><Plus className="w-4 h-4 mr-1"/> Add Item</button>}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {menu.categories.map((category, cIndex) => (
+                  <div key={cIndex} className="bg-slate-50 rounded-2xl p-6 relative border border-slate-200 shadow-sm">
+                    {isEditing && <button type="button" onClick={() => handleRemoveCategory(cIndex)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded-md transition-colors"><Trash2 className="w-4 h-4" /></button>}
+
+                    <div className="mb-6 mr-10">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Category Title</label>
+                      {isEditing ? (
+                        <input type="text" value={category.title} onChange={(e) => handleCategoryChange(e, cIndex)} placeholder="e.g. Frontend Developers" className="input-premium w-full text-lg font-bold text-slate-800" required />
+                      ) : (
+                        <div className="text-lg font-bold text-slate-800 py-2">{category.title || '-'}</div>
+                      )}
                     </div>
 
-                    {category.items.map((item, iIndex) => (
-                      <div key={iIndex} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative pr-12 group">
-                         {isEditing && <button type="button" onClick={() => handleRemoveItem(cIndex, iIndex)} className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-300 hover:text-red-500 transition-colors"><X className="w-5 h-5"/></button>}
-                         
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div>
-                             <label className="block text-xs font-semibold text-slate-500 mb-1">Role Name</label>
-                             {isEditing ? (
-                               <input type="text" value={item.name} onChange={(e) => handleItemChange(e, cIndex, iIndex, 'name')} placeholder="e.g. React JS Developers" className="input-premium py-2 text-sm" required />
-                             ) : (
-                               <div className="text-sm text-slate-700 font-medium py-2">{item.name || '-'}</div>
-                             )}
-                           </div>
-                           <div>
-                             <label className="block text-xs font-semibold text-slate-500 mb-1">Destination Link</label>
-                             {isEditing ? (
-                               <input type="text" value={item.link} onChange={(e) => handleItemChange(e, cIndex, iIndex, 'link')} placeholder="e.g. /hire-us/react-js" className="input-premium py-2 text-sm" required />
-                             ) : (
-                               <div className="text-sm text-blue-500 font-medium py-2 break-all">{item.link || '-'}</div>
-                             )}
-                           </div>
-                           <div className="md:col-span-2">
-                             <label className="block text-xs font-semibold text-slate-500 mb-2">Role Icon</label>
-                             <div className="flex items-center gap-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                        <label className="text-sm font-bold text-slate-700">Roles / Items</label>
+                        {isEditing && <button type="button" onClick={() => handleAddItem(cIndex)} className="text-blue-500 hover:text-blue-700 text-sm font-bold flex items-center"><Plus className="w-4 h-4 mr-1" /> Add Item</button>}
+                      </div>
+
+                      {category.items.map((item, iIndex) => (
+                        <div key={iIndex} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative pr-12 group">
+                          {isEditing && <button type="button" onClick={() => handleRemoveItem(cIndex, iIndex)} className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-300 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Role Name</label>
+                              {isEditing ? (
+                                <input type="text" value={item.name} onChange={(e) => handleItemChange(e, cIndex, iIndex, 'name')} placeholder="e.g. React JS Developers" className="input-premium py-2 text-sm" required />
+                              ) : (
+                                <div className="text-sm text-slate-700 font-medium py-2">{item.name || '-'}</div>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-500 mb-1">Destination Link</label>
+                              {isEditing ? (
+                                <input type="text" value={item.link} onChange={(e) => handleItemChange(e, cIndex, iIndex, 'link')} placeholder="e.g. /hire-us/react-js" className="input-premium py-2 text-sm" required />
+                              ) : (
+                                <div className="text-sm text-blue-500 font-medium py-2 break-all">{item.link || '-'}</div>
+                              )}
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-semibold text-slate-500 mb-2">Role Icon</label>
+                              <div className="flex items-center gap-4">
                                 {isEditing && (
                                   <>
                                     <input type="file" accept="image/*" onChange={(e) => handleItemIconUpload(e, cIndex, iIndex)} className="hidden" id={`icon-${cIndex}-${iIndex}`} />
@@ -297,60 +306,108 @@ export default function HireUsMenu() {
                                     <img src={typeof item.icon === 'string' ? `http://localhost:5000${item.icon}` : item.icon.preview} alt="Icon" className="max-w-full max-h-full object-contain" />
                                   </div>
                                 )}
-                             </div>
-                           </div>
-                         </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {category.items.length === 0 && <p className="text-xs text-slate-400 italic text-center py-2">No items added to this category yet.</p>}
+                    </div>
+                  </div>
+                ))}
+                {menu.categories.length === 0 && (
+                  <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                    <p className="text-slate-500 font-medium mb-4">You haven't created any menu categories.</p>
+                    {isEditing && <button type="button" onClick={handleAddCategory} className="btn-kretoss px-6 py-2 rounded-xl text-sm inline-flex items-center"><Plus className="w-4 h-4 mr-2" /> Create First Category</button>}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Links Section */}
+            <div className="space-y-6 pb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-800">Bottom Footer Links</h3>
+                {isEditing && <button type="button" onClick={handleAddBottomLink} className="btn-kretoss px-4 py-2 rounded-xl text-sm"><Plus className="w-4 h-4 inline mr-1" /> Add Link</button>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(menu.bottomLinks || []).map((link, lIndex) => (
+                  <div key={lIndex} className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm relative pr-10">
+                    {isEditing && <button type="button" onClick={() => handleRemoveBottomLink(lIndex)} className="absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>}
+                    <div className="space-y-3">
+                      <div>
+                        {isEditing ? (
+                          <input type="text" value={link.name} onChange={(e) => handleBottomLinkChange(e, lIndex, 'name')} placeholder="Display Name (e.g. > Hire Frontend Developer)" className="input-premium py-2 text-sm bg-white" required />
+                        ) : (
+                          <div className="text-sm font-bold text-slate-700 py-1">{link.name || '-'}</div>
+                        )}
                       </div>
-                    ))}
-                    {category.items.length === 0 && <p className="text-xs text-slate-400 italic text-center py-2">No items added to this category yet.</p>}
-                  </div>
-                </div>
-              ))}
-              {menu.categories.length === 0 && (
-                <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-                   <p className="text-slate-500 font-medium mb-4">You haven't created any menu categories.</p>
-                   {isEditing && <button type="button" onClick={handleAddCategory} className="btn-kretoss px-6 py-2 rounded-xl text-sm inline-flex items-center"><Plus className="w-4 h-4 mr-2" /> Create First Category</button>}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Links Section */}
-          <div className="space-y-6 pb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800">Bottom Footer Links</h3>
-              {isEditing && <button type="button" onClick={handleAddBottomLink} className="btn-kretoss px-4 py-2 rounded-xl text-sm"><Plus className="w-4 h-4 inline mr-1" /> Add Link</button>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(menu.bottomLinks || []).map((link, lIndex) => (
-                <div key={lIndex} className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm relative pr-10">
-                  {isEditing && <button type="button" onClick={() => handleRemoveBottomLink(lIndex)} className="absolute top-1/2 -translate-y-1/2 right-3 text-slate-400 hover:text-red-500 transition-colors"><X className="w-4 h-4"/></button>}
-                  <div className="space-y-3">
-                    <div>
-                      {isEditing ? (
-                        <input type="text" value={link.name} onChange={(e) => handleBottomLinkChange(e, lIndex, 'name')} placeholder="Display Name (e.g. > Hire Frontend Developer)" className="input-premium py-2 text-sm bg-white" required />
-                      ) : (
-                        <div className="text-sm font-bold text-slate-700 py-1">{link.name || '-'}</div>
-                      )}
-                    </div>
-                    <div>
-                      {isEditing ? (
-                        <input type="text" value={link.link} onChange={(e) => handleBottomLinkChange(e, lIndex, 'link')} placeholder="URL (e.g. /hire-frontend)" className="input-premium py-2 text-sm bg-white" required />
-                      ) : (
-                        <div className="text-sm text-blue-500 font-medium py-1 break-all">{link.link || '-'}</div>
-                      )}
+                      <div>
+                        {isEditing ? (
+                          <input type="text" value={link.link} onChange={(e) => handleBottomLinkChange(e, lIndex, 'link')} placeholder="URL (e.g. /hire-frontend)" className="input-premium py-2 text-sm bg-white" required />
+                        ) : (
+                          <div className="text-sm text-blue-500 font-medium py-1 break-all">{link.link || '-'}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {(!menu.bottomLinks || menu.bottomLinks.length === 0) && (
-                <p className="col-span-full text-sm text-slate-400 italic">No bottom links configured.</p>
-              )}
+                ))}
+                {(!menu.bottomLinks || menu.bottomLinks.length === 0) && (
+                  <p className="col-span-full text-sm text-slate-400 italic">No bottom links configured.</p>
+                )}
+              </div>
             </div>
-          </div>
 
-        </form>
+          </form>
+        ) : (
+          <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-x-8 gap-y-10 text-left">
+              {menu.categories?.map(cat => {
+                if (!cat.items || cat.items.length === 0) return null;
+                return (
+                  <div key={cat.title} className="flex flex-col">
+                    <h4 className="text-[#0a1520]/80 text-[12px] font-black uppercase tracking-[0.2em] border-b border-[#0037f0]/10 pb-3 mb-5">{cat.title}</h4>
+                    <ul className="space-y-0.5">
+                      {cat.items.map(role => {
+                        let iconStr = role.icon || '';
+                        const iconUrl = typeof iconStr === 'string' ? (iconStr.startsWith('http') ? iconStr : `http://localhost:5000${iconStr}`) : iconStr.preview;
+                        return (
+                          <li key={role.link}>
+                            <div className="flex items-center gap-3 p-1.5 -ml-1.5 rounded-lg border border-transparent transition-all duration-300 group relative overflow-hidden pr-3">
+                              <div className="relative w-8 h-8 shrink-0 flex items-center justify-center bg-white rounded-lg shadow-sm border border-gray-100 z-10">
+                                {role.icon ? (
+                                  <img src={iconUrl} alt="" className="w-4 h-4 opacity-80" />
+                                ) : (
+                                  <div className="w-4 h-4 bg-slate-200 rounded-sm"></div>
+                                )}
+                              </div>
+                              <span className="relative whitespace-nowrap text-[#0a1520]/80 font-semibold text-[13px] z-10 flex-1">{role.name ? role.name.replace('Hire ', '') : ''}</span>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+            {menu.bottomLinks && menu.bottomLinks.length > 0 && (
+              <>
+                <div className="w-full h-[2px] bg-gradient-to-r from-[#0037f0] to-[#44c7f6] mt-10 mb-6 rounded-full opacity-80"></div>
+                <div className="flex flex-wrap items-center justify-start gap-x-8 gap-y-4">
+                  {menu.bottomLinks.map(link => (
+                    <div key={link.name} className="group flex items-center gap-1 text-[13.5px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#0037f0] to-[#44c7f6]">
+                      <ChevronRight className="w-4 h-4 text-[#0037f0]" />
+                      <span>{link.name}</span>
+                      <ArrowRight className="w-4 h-4 text-[#44c7f6] ml-1" />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

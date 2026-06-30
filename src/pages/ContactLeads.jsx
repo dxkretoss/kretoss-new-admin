@@ -51,28 +51,28 @@ export default function ContactLeads() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm">
+          <thead className="bg-slate-50/50 border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-widest">
             <tr>
-              <th className="px-6 py-4 font-medium">Name</th>
-              <th className="px-6 py-4 font-medium">Company</th>
-              <th className="px-6 py-4 font-medium">Email</th>
-              <th className="px-6 py-4 font-medium">Service</th>
-              <th className="px-6 py-4 font-medium">Budget</th>
-              <th className="px-6 py-4 font-medium text-right">Actions</th>
+              <th className="px-6 py-3.5">Name</th>
+              <th className="px-6 py-3.5">Company</th>
+              <th className="px-6 py-3.5">Email</th>
+              <th className="px-6 py-3.5">Service</th>
+              <th className="px-6 py-3.5">Budget</th>
+              <th className="px-6 py-3.5 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
+          <tbody className="divide-y divide-slate-50 text-sm">
             {leads.map((lead) => (
-              <tr key={lead._id} className="hover:bg-slate-50">
-                <td className="px-6 py-4 font-medium text-slate-900">{lead.fullName}</td>
-                <td className="px-6 py-4 text-slate-600">{lead.companyName || '-'}</td>
-                <td className="px-6 py-4 flex items-center text-brand-light">
+              <tr key={lead._id} className="hover:bg-slate-50/50 transition-colors group">
+                <td className="px-6 py-3 font-medium text-slate-900">{lead.fullName}</td>
+                <td className="px-6 py-3 font-medium text-slate-600">{lead.companyName || '-'}</td>
+                <td className="px-6 py-3 font-medium flex items-center text-brand-light">
                   <Mail className="w-4 h-4 mr-2" />
                   {lead.email}
                 </td>
-                <td className="px-6 py-4">{lead.service || '-'}</td>
-                <td className="px-6 py-4">{lead.budget || '-'}</td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-3 font-medium">{lead.service || '-'}</td>
+                <td className="px-6 py-3 font-medium">{lead.budget || '-'}</td>
+                <td className="px-6 py-3 text-right">
                   <div className="flex items-center justify-end space-x-2">
                     <button onClick={() => handleViewDetails(lead)} className="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 font-medium inline-flex items-center px-3 py-1.5 rounded-lg transition-colors text-xs">
                       View Details

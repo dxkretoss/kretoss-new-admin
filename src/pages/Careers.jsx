@@ -283,26 +283,28 @@ export default function Careers() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Main Image</label>
-              <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-8 hover:bg-brand-light/5 hover:border-brand-light transition-all text-center cursor-pointer group">
-                <input type="file" onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    setImageFile(file);
-                    setImagePreview(URL.createObjectURL(file));
-                  }
-                }} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform mb-3">
-                  <Upload className="w-6 h-6 text-brand-dark" />
-                </div>
-                <span className="text-sm font-medium text-slate-600 block">Click or drag image to upload</span>
-              </div>
-              {(imagePreview || job.image) && (
-                <div className="mt-4 w-full md:w-1/2 lg:w-1/3">
-                  <div className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-100">
-                    <img src={imagePreview || (job.image.startsWith('/') ? `http://localhost:5000${job.image}` : job.image)} alt="Preview" className="w-full h-full object-cover" />
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="flex-1 relative border-2 border-dashed border-slate-300 rounded-2xl p-8 hover:bg-brand-light/5 hover:border-brand-light transition-all text-center cursor-pointer group flex flex-col justify-center items-center min-h-[160px]">
+                  <input type="file" onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }
+                  }} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform mb-3">
+                    <Upload className="w-6 h-6 text-brand-dark" />
                   </div>
+                  <span className="text-sm font-medium text-slate-600">Click or drag image to upload</span>
                 </div>
-              )}
+                {(imagePreview || job.image) && (
+                  <div className="w-full sm:w-1/2 lg:w-1/3">
+                    <div className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video h-full min-h-[160px] bg-slate-100">
+                      <img src={imagePreview || (job.image.startsWith('/') ? `http://localhost:5000${job.image}` : job.image)} alt="Preview" className="w-full h-full object-cover absolute inset-0" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -659,28 +659,28 @@ export default function HireUs() {
         <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100">
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Title / Slug</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Seller Name</th>
-                  <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              <thead className="bg-slate-50/50 border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                <tr>
+                  <th className="px-6 py-3.5">Title / Slug</th>
+                  <th className="px-6 py-3.5">Category</th>
+                  <th className="px-6 py-3.5">Seller Name</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 text-sm">
                 {hireUsList.length === 0 ? (
                   <tr><td colSpan="4" className="py-8 text-center text-slate-500">No Hire Us pages found.</td></tr>
                 ) : hireUsList.map((item) => (
-                  <tr key={item._id} className="hover:bg-blue-50/30 transition-colors group">
-                    <td className="py-4 px-6">
+                  <tr key={item._id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-3">
                       <div className="font-bold text-slate-800">{item.title}</div>
                       <div className="text-xs text-slate-500 mt-0.5">{item.slug}</div>
                     </td>
-                    <td className="py-4 px-6 text-slate-600 font-medium">{item.category}</td>
-                    <td className="py-4 px-6 text-slate-600">{item.seller?.name}</td>
-                    <td className="py-4 px-6 text-right">
-                      <button onClick={() => navigate(`/hire-us/edit/${item._id}`)} className="text-blue-500 hover:text-blue-700 font-semibold px-3 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors mr-2">Edit</button>
-                      <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold px-3 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">Delete</button>
+                    <td className="px-6 py-3 text-slate-600 font-medium">{item.category}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.seller?.name}</td>
+                    <td className="px-6 py-3 text-right">
+                      <button onClick={() => navigate(`/hire-us/edit/${item._id}`)} className="text-brand-light hover:text-brand-dark font-bold mr-5 transition-colors">Edit</button>
+                      <button onClick={() => handleDelete(item._id)} className="text-slate-400 hover:text-red-500 font-bold transition-colors">Delete</button>
                     </td>
                   </tr>
                 ))}

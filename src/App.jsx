@@ -190,8 +190,8 @@ function App() {
       }} />
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          {/* <Route element={<Layout />}> */}
+        {/* <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}> */}
+        <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/portfolios" element={<Portfolio />} />
           <Route path="/portfolios/add" element={<Portfolio />} />
